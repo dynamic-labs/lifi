@@ -1,14 +1,21 @@
 "use client";
 
+import { Button } from "@/components/ui/button";
+import { useDynamicContext } from "@dynamic-labs/sdk-react-core";
+import { Loader2, ArrowLeft } from "lucide-react";
+
 interface ActionButtonsProps {
   isLoading: boolean;
   isExecuting: boolean;
   hasRoutes: boolean;
   hasSelectedRoute: boolean;
-  isFormValid: boolean;
+  showRouteDisplay: boolean;
+  hasActiveRoute: boolean;
   onGetRoutes: () => void;
   onExecuteSwap: () => void;
   onClear: () => void;
+  onBackToForm: () => void;
+  onShowExecutionDisplay: () => void;
 }
 
 export default function ActionButtons({
@@ -16,61 +23,130 @@ export default function ActionButtons({
   isExecuting,
   hasRoutes,
   hasSelectedRoute,
-  isFormValid,
+  showRouteDisplay,
+  hasActiveRoute,
   onGetRoutes,
   onExecuteSwap,
   onClear,
+  onBackToForm,
+  onShowExecutionDisplay,
 }: ActionButtonsProps) {
-  return (
-    <div className="bg-white rounded-xl shadow-lg p-6 mb-6">
-      <div className="flex flex-wrap gap-4 justify-center">
-        <button
-          onClick={onGetRoutes}
-          disabled={isLoading || !isFormValid}
-          className={`px-8 py-3 rounded-lg font-medium transition-all duration-200 shadow-md hover:shadow-lg ${
-            isLoading || !isFormValid
-              ? "bg-gray-300 text-gray-500 cursor-not-allowed"
-              : "bg-gradient-to-r from-blue-500 to-purple-600 text-white hover:from-blue-600 hover:to-purple-700"
-          }`}
-        >
-          {isLoading ? (
-            <div className="flex items-center space-x-2">
-              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-              <span>Getting Routes...</span>
-            </div>
-          ) : (
-            "Get Routes"
-          )}
-        </button>
+  const { primaryWallet, setShowAuthFlow } = useDynamicContext();
 
-        {hasRoutes && !isExecuting && (
-          <button
+  if (showRouteDisplay) {
+    // Route display view - show Execute Swap, View Execution (if active), and Back buttons
+    return (
+      <div className="w-full max-w-md mb-6">
+        <div className="flex flex-col gap-4">
+          <Button
             onClick={onExecuteSwap}
-            disabled={isLoading || !hasSelectedRoute}
-            className={`px-8 py-3 rounded-lg font-medium transition-all duration-200 shadow-md hover:shadow-lg ${
-              isLoading || !hasSelectedRoute
-                ? "bg-gray-300 text-gray-500 cursor-not-allowed"
-                : "bg-gradient-to-r from-green-500 to-emerald-600 text-white hover:from-green-600 hover:to-emerald-700"
-            }`}
+            disabled={isLoading || !hasSelectedRoute || isExecuting}
+            className="w-full h-12 text-lg font-semibold"
           >
-            {isLoading ? (
-              <div className="flex items-center space-x-2">
-                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                <span>Executing...</span>
-              </div>
+            {isLoading || isExecuting ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Executing...
+              </>
             ) : (
               "Execute Swap"
             )}
-          </button>
+          </Button>
+
+          {hasActiveRoute && (
+            <Button
+              onClick={onShowExecutionDisplay}
+              variant="outline"
+              className="w-full h-12 text-lg"
+            >
+              <svg
+                className="mr-2 h-4 w-4"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M13 10V3L4 14h7v7l9-11h-7z"
+                />
+              </svg>
+              View Execution
+            </Button>
+          )}
+
+          <Button
+            onClick={onBackToForm}
+            variant="outline"
+            className="w-full h-12 text-lg"
+          >
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Back
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  // Form view - show Get Routes, View Execution (if active), and Clear buttons
+  return (
+    <div className="w-full max-w-md mb-6">
+      <div className="flex flex-col gap-4">
+        <Button
+          onClick={() => {
+            if (!primaryWallet) {
+              setShowAuthFlow(true);
+            } else {
+              onGetRoutes();
+            }
+          }}
+          disabled={isLoading}
+          className="w-full h-12 text-lg font-semibold"
+        >
+          {isLoading ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Getting Routes...
+            </>
+          ) : !primaryWallet ? (
+            "Connect Wallet"
+          ) : (
+            "Get Routes"
+          )}
+        </Button>
+
+        {hasActiveRoute && (
+          <Button
+            onClick={onShowExecutionDisplay}
+            variant="outline"
+            className="w-full h-12 text-lg"
+          >
+            <svg
+              className="mr-2 h-4 w-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M13 10V3L4 14h7v7l9-11h-7z"
+              />
+            </svg>
+            View Execution
+          </Button>
         )}
 
         {(hasRoutes || isExecuting) && (
-          <button
+          <Button
             onClick={onClear}
-            className="px-6 py-3 bg-gray-100 text-gray-700 font-medium rounded-lg hover:bg-gray-200 transition-colors shadow-md hover:shadow-lg"
+            variant="outline"
+            className="w-full h-12 text-lg"
           >
             Clear
-          </button>
+          </Button>
         )}
       </div>
     </div>
