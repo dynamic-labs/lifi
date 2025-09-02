@@ -1,3 +1,10 @@
+import { type ClassValue, clsx } from "clsx";
+import { twMerge } from "tailwind-merge";
+
+export function cn(...inputs: ClassValue[]) {
+  return twMerge(clsx(inputs));
+}
+
 export const getExplorerUrl = (txHash: string, chainId?: number) => {
   if (!chainId) return null;
 
@@ -27,8 +34,4 @@ export const formatAmount = (amount: string, decimals: number) => {
   } catch {
     return "0";
   }
-};
-
-export const openExternalLink = (url: string) => {
-  window.open(url, "_blank", "noopener,noreferrer");
 };

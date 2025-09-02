@@ -1,25 +1,24 @@
 "use client";
 
-import { Token } from "@lifi/sdk";
-
-interface SimpleChain {
-  id: number;
-  name: string;
-}
+import { cn } from "@/lib/utils";
+import { Chain, Token } from "@lifi/sdk";
+import { ArrowUpDown, ChevronDown } from "lucide-react";
+import Image from "next/image";
+import { useMemo, useState } from "react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "./ui/dialog";
+import { useTokenBalances } from "@dynamic-labs/sdk-react-core";
 
 interface SwapFormProps {
-  fromChain: SimpleChain | null;
-  toChain: SimpleChain | null;
+  fromChain: Chain | null;
+  toChain: Chain | null;
   fromToken: Token | null;
   toToken: Token | null;
   amount: string;
-  chains: SimpleChain[];
+  chains: Chain[];
   fromTokens: Token[];
   toTokens: Token[];
-  isLoadingChains: boolean;
-  isLoadingTokens: boolean;
-  onFromChainChange: (chain: SimpleChain | null) => void;
-  onToChainChange: (chain: SimpleChain | null) => void;
+  onFromChainChange: (chain: Chain | null) => void;
+  onToChainChange: (chain: Chain | null) => void;
   onFromTokenChange: (token: Token | null) => void;
   onToTokenChange: (token: Token | null) => void;
   onAmountChange: (amount: string) => void;
@@ -34,179 +33,359 @@ export default function SwapForm({
   chains,
   fromTokens,
   toTokens,
-  isLoadingChains,
-  isLoadingTokens,
   onFromChainChange,
   onToChainChange,
   onFromTokenChange,
   onToTokenChange,
   onAmountChange,
 }: SwapFormProps) {
-  return (
-    <div className="bg-white rounded-xl shadow-lg p-6 mb-6">
-      <h2 className="text-xl font-semibold text-gray-900 mb-6 text-center">
-        Swap Configuration
-      </h2>
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="space-y-4">
-          <div className="flex items-center space-x-2 mb-4">
-            <div className="w-8 h-8 bg-red-100 rounded-full flex items-center justify-center">
-              <span className="text-red-600 font-bold text-sm">→</span>
-            </div>
-            <h3 className="text-lg font-medium text-gray-900">From</h3>
-          </div>
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Chain
-              </label>
-              <select
-                value={fromChain?.id || ""}
-                onChange={(e) => {
-                  const chainId = parseInt(e.target.value);
-                  const chain = chains.find((c) => c.id === chainId);
-                  onFromChainChange(chain || null);
-                }}
-                disabled={isLoadingChains}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors bg-white"
-              >
-                <option value="">
-                  {isLoadingChains ? "Loading chains..." : "Select chain"}
-                </option>
-                {chains.map((chain) => (
-                  <option key={chain.id} value={chain.id}>
-                    {chain.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Token
-              </label>
-              <select
-                value={fromToken?.address || ""}
-                onChange={(e) => {
-                  const token = fromTokens.find(
-                    (t) => t.address === e.target.value
-                  );
-                  onFromTokenChange(token || null);
-                }}
-                disabled={!fromChain || isLoadingTokens}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors bg-white"
-              >
-                <option value="">
-                  {isLoadingTokens ? "Loading tokens..." : "Select token"}
-                </option>
-                {fromTokens.map((token) => (
-                  <option key={token.address} value={token.address}>
-                    {token.symbol} - {token.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Amount
-              </label>
-              <div className="relative">
-                <input
-                  type="number"
-                  value={amount}
-                  onChange={(e) => onAmountChange(e.target.value)}
-                  placeholder="0.0"
-                  disabled={!fromToken}
-                  className="w-full px-4 py-3 pr-12 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors bg-white"
-                />
-                <div className="absolute inset-y-0 right-0 flex items-center pr-3">
-                  <button className="text-gray-400 hover:text-gray-600">
-                    <svg
-                      className="w-5 h-5"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"
-                      />
-                    </svg>
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div className="space-y-4">
-          <div className="flex items-center space-x-2 mb-4">
-            <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
-              <span className="text-green-600 font-bold text-sm">←</span>
-            </div>
-            <h3 className="text-lg font-medium text-gray-900">To</h3>
-          </div>
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Chain
-              </label>
-              <select
-                value={toChain?.id || ""}
-                onChange={(e) => {
-                  const chainId = parseInt(e.target.value);
-                  const chain = chains.find((c) => c.id === chainId);
-                  onToChainChange(chain || null);
-                }}
-                disabled={isLoadingChains}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors bg-white"
-              >
-                <option value="">
-                  {isLoadingChains ? "Loading chains..." : "Select chain"}
-                </option>
-                {chains.map((chain) => (
-                  <option key={chain.id} value={chain.id}>
-                    {chain.name}
-                  </option>
-                ))}
-              </select>
-            </div>
+  // Modal states
+  const [showTokenModal, setShowTokenModal] = useState(false);
+  const [modalType, setModalType] = useState<"from" | "to">("from");
+  const [searchQuery, setSearchQuery] = useState("");
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Token
-              </label>
-              <select
-                value={toToken?.address || ""}
-                onChange={(e) => {
-                  const token = toTokens.find(
-                    (t) => t.address === e.target.value
-                  );
-                  onToTokenChange(token || null);
-                }}
-                disabled={!toChain || isLoadingTokens}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors bg-white"
+  // Fetch token balances using Dynamic's useTokenBalances hook
+  const { tokenBalances: fromTokenBalances, isLoading: isLoadingFromBalances } =
+    useTokenBalances({
+      networkId: fromChain?.id,
+      includeNativeBalance: true,
+      includeFiat: false,
+    });
+
+  const { tokenBalances: toTokenBalances, isLoading: isLoadingToBalances } =
+    useTokenBalances({
+      networkId: toChain?.id,
+      includeNativeBalance: true,
+      includeFiat: false,
+    });
+
+  // Helper function to get balance for a specific token
+  const getTokenBalance = (
+    token: Token | null,
+    balances:
+      | Array<{
+          address?: string;
+          isNative?: boolean;
+          balance: number;
+        }>
+      | undefined
+  ) => {
+    if (!token || !balances) return "0.00";
+
+    // For native tokens, look for the native balance
+    if (
+      token.address === "0x0000000000000000000000000000000000000000" ||
+      !token.address
+    ) {
+      // Look for native token by zero address or isNative flag
+      const nativeBalance = balances.find(
+        (balance) =>
+          balance.isNative ||
+          balance.address === "0x0000000000000000000000000000000000000000"
+      );
+
+      return nativeBalance ? nativeBalance.balance.toFixed(4) : "0.00";
+    }
+
+    // For ERC-20 tokens, look for matching address
+    const tokenBalance = balances.find(
+      (balance) =>
+        balance.address?.toLowerCase() === token.address?.toLowerCase()
+    );
+
+    return tokenBalance ? tokenBalance.balance.toFixed(4) : "0.00";
+  };
+
+  // Get balances for current tokens
+  const fromTokenBalance = getTokenBalance(fromToken, fromTokenBalances);
+  const toTokenBalance = getTokenBalance(toToken, toTokenBalances);
+
+  // Modal handlers
+  const handleChainSelect = (chain: Chain) => {
+    if (modalType === "from") {
+      onFromChainChange(chain);
+    } else {
+      onToChainChange(chain);
+    }
+  };
+
+  const handleTokenSelect = (token: Token) => {
+    if (modalType === "from") {
+      onFromTokenChange(token);
+    } else {
+      onToTokenChange(token);
+    }
+    setShowTokenModal(false);
+    setSearchQuery("");
+  };
+
+  const openTokenModal = (type: "from" | "to") => {
+    setModalType(type);
+    setShowTokenModal(true);
+  };
+
+  const filteredTokens = useMemo(
+    () =>
+      (modalType === "from" ? fromTokens : toTokens).filter((token) => {
+        const q = searchQuery.toLowerCase();
+        return (
+          token.symbol.toLowerCase().includes(q) ||
+          token.name.toLowerCase().includes(q)
+        );
+      }),
+    [modalType, fromTokens, toTokens, searchQuery]
+  );
+
+  const currentChain = modalType === "from" ? fromChain : toChain;
+  const currentToken = modalType === "from" ? fromToken : toToken;
+
+  return (
+    <div className="w-full max-w-md">
+      {/* Swap Card */}
+      <div className="bg-card text-card-foreground rounded-2xl shadow-lg p-6 border border-border">
+        <div className="text-center mb-6">
+          <h1 className="text-2xl font-bold mb-2">Cross Chain Swap</h1>
+          <p className="text-muted-foreground text-sm">
+            Swap tokens across different blockchain networks
+          </p>
+        </div>
+
+        {/* From Section */}
+        <div className="bg-muted/40 rounded-xl p-4 mb-4 border border-border">
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-sm font-medium">From</span>
+            <button
+              onClick={() => openTokenModal("from")}
+              className="flex items-center space-x-2 text-sm text-muted-foreground hover:text-foreground cursor-pointer"
+            >
+              <span>{fromChain?.name || "Select Chain"}</span>
+              <ChevronDown className="w-4 h-4" />
+            </button>
+          </div>
+
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center space-x-3">
+              <button
+                onClick={() => openTokenModal("from")}
+                className="flex items-center space-x-2 text-lg font-semibold hover:bg-accent hover:text-accent-foreground rounded-lg px-2 py-1 cursor-pointer"
               >
-                <option value="">
-                  {isLoadingTokens ? "Loading tokens..." : "Select token"}
-                </option>
-                {toTokens.map((token) => (
-                  <option key={token.address} value={token.address}>
-                    {token.symbol} - {token.name}
-                  </option>
-                ))}
-              </select>
+                {fromToken ? (
+                  <>
+                    {fromToken?.logoURI ? (
+                      <Image
+                        src={fromToken.logoURI}
+                        alt={`${fromToken.symbol} logo`}
+                        width={24}
+                        height={24}
+                        className="w-6 h-6 rounded-full"
+                        unoptimized
+                      />
+                    ) : (
+                      <span className="text-2xl">🪙</span>
+                    )}
+                    <span>{fromToken.symbol}</span>
+                  </>
+                ) : (
+                  <span className="text-muted-foreground">Select token</span>
+                )}
+                <ChevronDown className="w-4 h-4" />
+              </button>
             </div>
-            <div className="pt-8">
-              <div className="bg-gray-50 rounded-lg p-4 border-2 border-dashed border-gray-300">
-                <p className="text-sm text-gray-500 text-center">
-                  Select tokens to see estimated output
-                </p>
-              </div>
+            <button
+              className="text-sm text-primary hover:underline font-medium cursor-pointer"
+              onClick={() => {
+                // Set max amount to the actual balance
+                if (fromTokenBalance && fromTokenBalance !== "0.00") {
+                  onAmountChange(fromTokenBalance);
+                }
+              }}
+              disabled={
+                !fromTokenBalance ||
+                fromTokenBalance === "0.00" ||
+                isLoadingFromBalances
+              }
+            >
+              Max
+            </button>
+          </div>
+
+          <input
+            type="number"
+            value={amount}
+            onChange={(e) => onAmountChange(e.target.value)}
+            placeholder="0.00"
+            className="w-full text-2xl font-semibold bg-transparent border-none outline-none"
+          />
+
+          <div className="text-sm text-muted-foreground mt-2">
+            <span className="border-b border-dashed border-border w-full block h-4"></span>
+          </div>
+
+          {fromToken && (
+            <div className="text-sm text-muted-foreground mt-1">
+              Balance:{" "}
+              {isLoadingFromBalances
+                ? "Loading..."
+                : `${fromTokenBalance} ${fromToken.symbol}`}
+            </div>
+          )}
+        </div>
+
+        {/* Swap Direction Button */}
+        <div className="flex justify-center mb-4">
+          <button
+            className="w-10 h-10 bg-accent text-accent-foreground rounded-full flex items-center justify-center hover:bg-accent/80 transition-colors cursor-pointer"
+            onClick={() => {
+              onFromChainChange(toChain);
+              onToChainChange(fromChain);
+              onFromTokenChange(toToken);
+              onToTokenChange(fromToken);
+            }}
+          >
+            <ArrowUpDown className="w-5 h-5" />
+          </button>
+        </div>
+
+        {/* To Section */}
+        <div className="bg-muted/40 rounded-xl p-4 mb-6 border border-border">
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-sm font-medium">To</span>
+            <button
+              onClick={() => openTokenModal("to")}
+              className="flex items-center space-x-2 text-sm text-muted-foreground hover:text-foreground cursor-pointer"
+            >
+              <span>{toChain?.name || "Select Chain"}</span>
+              <ChevronDown className="w-4 h-4" />
+            </button>
+          </div>
+
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center space-x-3">
+              <button
+                onClick={() => openTokenModal("to")}
+                className="flex items-center space-x-2 text-lg font-semibold hover:bg-accent hover:text-accent-foreground rounded-lg px-2 py-1 cursor-pointer"
+              >
+                {toToken ? (
+                  <>
+                    {toToken?.logoURI ? (
+                      <Image
+                        src={toToken.logoURI}
+                        alt={`${toToken.symbol} logo`}
+                        width={24}
+                        height={24}
+                        className="w-6 h-6 rounded-full"
+                        unoptimized
+                      />
+                    ) : (
+                      <span className="text-2xl">🪙</span>
+                    )}
+                    <span>{toToken.symbol}</span>
+                  </>
+                ) : (
+                  <span className="text-muted-foreground">Select token</span>
+                )}
+                <ChevronDown className="w-4 h-4" />
+              </button>
             </div>
           </div>
+
+          <div className="text-2xl font-semibold mb-2">0.00</div>
+
+          <div className="text-sm text-muted-foreground mt-2">
+            <span className="border-b border-dashed border-border w-full block h-4"></span>
+          </div>
+
+          {toToken && (
+            <div className="text-sm text-muted-foreground mt-1">
+              Balance:{" "}
+              {isLoadingToBalances
+                ? "Loading..."
+                : `${toTokenBalance} ${toToken.symbol}`}
+            </div>
+          )}
         </div>
       </div>
+
+      {/* Token Selection Modal */}
+      <Dialog open={showTokenModal} onOpenChange={setShowTokenModal}>
+        <DialogContent className="border border-border bg-popover text-popover-foreground">
+          <DialogHeader>
+            <DialogTitle>Select a token</DialogTitle>
+          </DialogHeader>
+          <div className="mb-4 overflow-hidden">
+            <h3 className="text-sm font-medium text-muted-foreground mb-3">
+              Available chains
+            </h3>
+            <div className="flex space-x-2 overflow-x-auto pb-2 scrollbar-hide w-full min-w-0">
+              {chains.map((chain) => (
+                <button
+                  key={chain.id}
+                  onClick={() => handleChainSelect(chain)}
+                  className={cn(
+                    "flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center text-lg border cursor-pointer",
+                    currentChain?.id === chain.id
+                      ? "border-primary bg-primary/10"
+                      : "border-border bg-background"
+                  )}
+                >
+                  <Image
+                    src={chain.logoURI || ""}
+                    alt={chain.name}
+                    width={24}
+                    height={24}
+                    className="w-6 h-6 rounded-full"
+                    unoptimized
+                  />
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="relative mb-4">
+            <input
+              type="text"
+              placeholder="Search for a token"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-4 pr-4 py-3 border border-input rounded-xl focus:ring-2 focus:ring-ring focus:border-ring bg-background"
+            />
+          </div>
+          <div className="space-y-2 max-h-96 overflow-y-auto">
+            {filteredTokens.map((token) => (
+              <button
+                key={token.address}
+                onClick={() => handleTokenSelect(token)}
+                className={cn(
+                  "w-full flex items-center space-x-3 p-3 rounded-xl transition-colors hover:bg-accent hover:text-accent-foreground border border-transparent cursor-pointer",
+                  currentToken?.address === token.address &&
+                    "bg-primary/10 border-primary"
+                )}
+              >
+                {token.logoURI ? (
+                  <Image
+                    src={token.logoURI}
+                    alt={`${token.symbol} logo`}
+                    width={24}
+                    height={24}
+                    className="w-6 h-6 rounded-full"
+                    unoptimized
+                  />
+                ) : (
+                  <span className="text-2xl">🪙</span>
+                )}
+                <div className="flex-1 text-left">
+                  <div className="font-medium">{token.name}</div>
+                  <div className="text-sm text-muted-foreground">
+                    {token.symbol}
+                  </div>
+                </div>
+                {currentToken?.address === token.address && (
+                  <div className="w-4 h-4 bg-primary rounded-full border-2 border-background"></div>
+                )}
+              </button>
+            ))}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
